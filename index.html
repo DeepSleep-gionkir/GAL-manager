@@ -2,567 +2,585 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>갤러리 살리기 시뮬레이터 DX</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>갤러리 매니저: 유니버스</title>
     <style>
         :root {
-            --bg-color: #2d3436;
-            --text-color: #dfe6e9;
-            --accent-color: #0984e3;
-            --danger-color: #d63031;
-            --warning-color: #fdcb6e;
-            --success-color: #00b894;
-            --mental-color: #a29bfe;
+            --bg-color: #121212;
+            --panel-bg: #1e1e1e;
+            --accent: #3498db;
+            --danger: #e74c3c;
+            --gold: #f1c40f;
+            --karma: #9b59b6;
+            --text: #ecf0f1;
+            --cp-color: #2ecc71;
         }
 
         body {
-            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+            font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
             background-color: var(--bg-color);
-            color: var(--text-color);
+            color: var(--text);
             margin: 0;
-            padding: 10px;
+            padding: 0;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            box-sizing: border-box;
-            -webkit-user-select: none;
+            overflow: hidden;
             user-select: none;
         }
 
-        .container {
-            width: 100%;
-            max-width: 650px;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid #636e72;
-            display: flex;
+        /* --- Screens --- */
+        .screen {
+            position: absolute; inset: 0;
+            display: none;
             flex-direction: column;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background: var(--bg-color);
+            z-index: 10;
         }
+        .screen.active { display: flex; }
 
-        h1 {
+        /* Start Screen */
+        #start-screen {
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
             text-align: center;
-            font-size: 1.5rem;
-            margin: 0 0 15px 0;
-            color: #fff;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
         }
-
-        /* Stats Bars */
-        .stats-grid {
+        .theme-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
-            margin-bottom: 15px;
+            width: 100%;
+            max-width: 400px;
+            margin-top: 30px;
         }
-        
-        @media (max-width: 500px) {
-            .stats-grid { grid-template-columns: 1fr; gap: 5px; }
+        .theme-btn {
+            background: rgba(0,0,0,0.6);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
         }
+        .theme-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
+        .theme-title { font-size: 1.2rem; font-weight: bold; display: block; margin-bottom: 5px; }
+        .theme-desc { font-size: 0.8rem; color: #ddd; }
 
-        .status-bar { margin-bottom: 5px; }
-        .status-label {
+        /* Game Header */
+        header {
+            background: #000;
+            padding: 8px 12px;
+            border-bottom: 1px solid #333;
+            flex-shrink: 0;
             display: flex;
             justify-content: space-between;
-            margin-bottom: 3px;
-            font-size: 0.85rem;
-            font-weight: bold;
-        }
-        .bar-container {
-            height: 12px;
-            background-color: #444;
-            border-radius: 6px;
-            overflow: hidden;
-            position: relative;
-        }
-        .bar-fill {
-            height: 100%;
-            width: 50%;
-            transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.4s;
-        }
-
-        /* Log Area */
-        #game-log {
-            background-color: #111;
-            color: #0f0;
-            font-family: 'D2Coding', 'Courier New', monospace;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            overflow-y: auto;
-            font-size: 13px;
-            line-height: 1.4;
-            border: 1px solid #555;
-            height: 180px;
-            flex-shrink: 0;
-            box-shadow: inset 0 0 10px #000;
-        }
-        .log-entry { margin-bottom: 6px; border-bottom: 1px dashed #333; padding-bottom: 2px; }
-        .log-day { color: #ffeaa7; font-weight: bold; }
-        .log-bad { color: #ff7675; }
-        .log-good { color: #55efc4; }
-        .log-info { color: #74b9ff; }
-
-        /* Action Grid */
-        .actions {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-        }
-
-        button {
-            padding: 12px 5px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.1s;
-            color: white;
-            display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
-            min-height: 60px;
+            font-size: 0.9rem;
         }
-
-        button:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.2); }
-        button:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(100%); }
-
-        .btn-blue { background-color: var(--accent-color); }
-        .btn-red { background-color: var(--danger-color); }
-        .btn-yellow { background-color: #e67e22; }
-        .btn-purple { background-color: #6c5ce7; }
-        .btn-green { background-color: var(--success-color); }
-        .btn-dark { background-color: #636e72; }
-
-        .tooltip {
-            font-size: 0.7rem;
-            color: rgba(255,255,255,0.8);
-            margin-top: 3px;
-            font-weight: normal;
-        }
-
-        /* Overlay */
-        #overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.96);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            z-index: 999;
-            text-align: center;
-            padding: 20px;
-            animation: fadeIn 0.5s;
-        }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; }}
-
-        #ending-title { font-size: 2.2rem; margin-bottom: 15px; font-weight: 900; }
-        #ending-desc { font-size: 1.1rem; margin-bottom: 30px; line-height: 1.6; color: #dfe6e9; max-width: 500px;}
-        #restart-btn {
-            background-color: var(--success-color);
-            padding: 15px 40px;
-            font-size: 1.3rem;
-            box-shadow: 0 5px 0 #008c70;
-        }
-
-        /* Badge */
-        .badge {
-            display: inline-block;
+        .rank-badge {
+            background: var(--gold);
+            color: #000;
+            font-weight: 900;
             padding: 2px 6px;
             border-radius: 4px;
-            font-size: 0.7rem;
-            margin-left: 5px;
+            margin-right: 5px;
         }
-        .badge-pasdak { background-color: #0984e3; color: white; }
+        .res-group span { margin-left: 10px; font-weight: bold; }
+
+        /* Main Game Area */
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+        }
+
+        /* Stat Bars */
+        .stat-row { display: flex; align-items: center; margin-bottom: 6px; font-size: 0.85rem; }
+        .stat-icon { width: 20px; text-align: center; margin-right: 8px; }
+        .stat-bar-bg { flex: 1; height: 8px; background: #333; border-radius: 4px; overflow: hidden; }
+        .stat-fill { height: 100%; transition: width 0.3s; }
+        .stat-val { width: 30px; text-align: right; font-family: monospace; font-size: 0.8rem; }
+
+        /* Log */
+        #log-area {
+            flex: 1;
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 8px;
+            font-family: 'D2Coding', monospace;
+            font-size: 0.8rem;
+            overflow-y: auto;
+            min-height: 120px;
+            line-height: 1.4;
+        }
+        .log-entry { border-bottom: 1px solid #1a1a1a; padding-bottom: 2px; margin-bottom: 2px; }
+        .l-sys { color: #aaa; }
+        .l-good { color: #2ecc71; }
+        .l-bad { color: #e74c3c; }
+        .l-warn { color: #f39c12; }
+        .l-rare { color: #9b59b6; font-weight: bold; }
+
+        /* Footer / Actions */
+        footer { background: #111; padding: 10px; flex-shrink: 0; border-top: 1px solid #333; }
+        .tab-menu { display: flex; gap: 5px; margin-bottom: 8px; }
+        .tab-btn {
+            flex: 1; padding: 8px; background: #222; border: none; color: #777;
+            border-radius: 4px; font-weight: bold; cursor: pointer;
+        }
+        .tab-btn.active { background: var(--accent); color: #fff; }
+
+        .action-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+            height: 160px; overflow-y: auto;
+        }
+        .act-btn {
+            background: #2c3e50; border: none; border-radius: 4px; color: #fff;
+            padding: 8px 4px; font-size: 0.8rem; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: relative; transition: 0.1s; min-height: 50px;
+        }
+        .act-btn:active { transform: scale(0.96); }
+        .act-btn:disabled { opacity: 0.3; filter: grayscale(1); }
+        .act-cost { font-size: 0.7rem; color: var(--cp-color); margin-top: 2px; }
+        .act-desc { display: none; } /* Tooltip logic handled by simple text for now */
+
+        /* Styles for specific button types */
+        .btn-dirty { border-bottom: 2px solid #8e44ad; } /* Karma actions */
+        .btn-clean { border-bottom: 2px solid #27ae60; }
+        .btn-risk { border-bottom: 2px solid #c0392b; }
+
+        /* Ending Overlay */
+        #ending-overlay {
+            background: rgba(0,0,0,0.98);
+            z-index: 100;
+            justify-content: center; align-items: center;
+            text-align: center; padding: 30px;
+        }
+        #end-title { font-size: 2.5rem; margin-bottom: 20px; font-weight: 900; color: #e74c3c; }
+        #end-desc { font-size: 1.1rem; color: #ccc; margin-bottom: 40px; line-height: 1.6; max-width: 600px; }
+        .restart-btn {
+            background: var(--cp-color); border: none; padding: 15px 40px;
+            font-size: 1.2rem; font-weight: bold; border-radius: 50px; cursor: pointer;
+            box-shadow: 0 0 20px rgba(46, 204, 113, 0.4);
+        }
+
+        /* Floating Text */
+        .float-txt {
+            position: absolute; font-weight: bold; pointer-events: none;
+            animation: floatUp 1s forwards; text-shadow: 1px 1px 0 #000; z-index: 50;
+        }
+        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-40px); opacity: 0; } }
+
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>📊 마이너 갤러리 매니저 DX</h1>
-
-        <div class="stats-grid">
-            <div>
-                <div class="status-bar">
-                    <div class="status-label">
-                        <span>📅 생존: <span id="day-display">1</span>/60일</span>
-                        <span id="pasdak-badge" class="badge badge-pasdak" style="display:none;">파딱 보유중</span>
-                    </div>
-                    <div class="bar-container" style="background:#222;">
-                        <div id="progress-bar" class="bar-fill" style="width: 1%; background-color: #fff;"></div>
-                    </div>
-                </div>
-
-                <div class="status-bar">
-                    <div class="status-label">
-                        <span>🔥 활성도 (리젠)</span>
-                        <span id="val-activity">50</span>
-                    </div>
-                    <div class="bar-container">
-                        <div id="activity-bar" class="bar-fill" style="width: 50%; background-color: #00b894;"></div>
-                    </div>
-                </div>
-                
-                <div class="status-bar">
-                    <div class="status-label">
-                        <span>🧠 주딱 멘탈</span>
-                        <span id="val-mental">100</span>
-                    </div>
-                    <div class="bar-container">
-                        <div id="mental-bar" class="bar-fill" style="width: 100%; background-color: #a29bfe;"></div>
-                    </div>
-                </div>
+    <div id="start-screen" class="screen active">
+        <h1 style="color:#fff; text-shadow:0 0 10px #fff;">갤러리 매니저: 유니버스</h1>
+        <p style="color:#ddd;">운영할 갤러리의 주제를 선택하세요.</p>
+        
+        <div class="theme-grid">
+            <div class="theme-btn" onclick="game.start('idol')">
+                <span class="theme-title">🎤 연예/아이돌</span>
+                <span class="theme-desc">친목↑ 멘탈약함<br>화력 최고</span>
             </div>
-
-            <div>
-                <div class="status-bar">
-                    <div class="status-label">
-                        <span>🤬 어그로/분탕</span>
-                        <span id="val-toxicity">20</span>
-                    </div>
-                    <div class="bar-container">
-                        <div id="toxicity-bar" class="bar-fill" style="width: 20%; background-color: #fdcb6e;"></div>
-                    </div>
-                </div>
-
-                <div class="status-bar">
-                    <div class="status-label">
-                        <span>🤝 친목질 (위험)</span>
-                        <span id="val-friendship">10</span>
-                    </div>
-                    <div class="bar-container">
-                        <div id="friendship-bar" class="bar-fill" style="width: 10%; background-color: #74b9ff;"></div>
-                    </div>
-                </div>
+            <div class="theme-btn" onclick="game.start('game')">
+                <span class="theme-title">🎮 게임</span>
+                <span class="theme-desc">분탕 많음<br>밸런스형</span>
             </div>
-        </div>
-
-        <div id="game-log">
-            <div class="log-entry">> 갤러리가 개설되었습니다. 60일을 버티십시오.</div>
-            <div class="log-entry">> 멘탈이 0이 되거나, 다른 스탯이 100/0이 되면 망합니다.</div>
-        </div>
-
-        <div class="actions">
-            <button class="btn-blue" onclick="game.action('promote')">
-                📡 타갤 홍보
-                <span class="tooltip">활성↑ 어그로↑ 멘탈-5</span>
-            </button>
-            <button class="btn-red" onclick="game.action('censorship')">
-                🔨 천안문 (광역삭제)
-                <span class="tooltip">어그로↓↓↓ 활성↓ 멘탈-20</span>
-            </button>
-            <button class="btn-yellow" onclick="game.action('bait')">
-                🔥 떡밥 굴리기
-                <span class="tooltip">활성↑↑ 친목↓ 어그로↑ 멘탈-5</span>
-            </button>
-            <button class="btn-purple" onclick="game.action('info')">
-                📘 정보글/공지 작성
-                <span class="tooltip">어그로↓ 활성+ 멘탈-10</span>
-            </button>
-            
-            <button class="btn-green" onclick="game.action('contest')">
-                🏆 대회 개최
-                <span class="tooltip">활성↑↑ 친목↑↑ 멘탈-15</span>
-            </button>
-            <button class="btn-dark" onclick="game.action('recruit')">
-                👮‍♂️ 파딱(부매니저) 호출
-                <span class="tooltip">자동관리 / 통수위험</span>
-            </button>
-            <button class="btn-red" onclick="game.action('shame')">
-                🔫 고로시 (저격)
-                <span class="tooltip">친목↓↓ 어그로↑ 멘탈-10</span>
-            </button>
-            <button class="btn-green" onclick="game.action('rest')">
-                🛌 현생 살기 (휴식)
-                <span class="tooltip">멘탈회복↑↑ 갤방치(랜덤)</span>
-            </button>
-            
-            <button class="btn-blue" onclick="game.action('alliance')">
-                🤝 타갤과 동맹
-                <span class="tooltip">활성↑↑ 어그로↑↑ 멘탈-10</span>
-            </button>
-            <button class="btn-yellow" onclick="game.action('allow_friend')">
-                🥂 좆목 허용
-                <span class="tooltip">친목↑↑↑ 활성↑ 멘탈+5</span>
-            </button>
+            <div class="theme-btn" onclick="game.start('pol')">
+                <span class="theme-title">⚖️ 정치/사회</span>
+                <span class="theme-desc">어그로 MAX<br>업보 쌓기 쉬움</span>
+            </div>
+            <div class="theme-btn" onclick="game.start('hobby')">
+                <span class="theme-title">🚲 취미/식물</span>
+                <span class="theme-desc">활성도 낮음<br>힐링 가능</span>
+            </div>
         </div>
     </div>
 
-    <div id="overlay">
-        <h2 id="ending-title">GAME OVER</h2>
-        <p id="ending-desc">엔딩 설명이 여기에 나옵니다.</p>
-        <button id="restart-btn" onclick="game.reset()">다시 고통받기</button>
+    <div id="game-screen" class="screen">
+        <header>
+            <div>
+                <span id="ui-rank" class="rank-badge">LV.1 마이너</span>
+                <span id="ui-title">갤러리</span>
+            </div>
+            <div class="res-group">
+                <span style="color:var(--cp-color)">⚡ <span id="ui-cp">0</span></span>
+                <span style="color:#fff">📅 <span id="ui-day">1</span>일</span>
+                <span style="color:var(--karma)" title="업보(Karma)">😈 <span id="ui-karma">0</span></span>
+            </div>
+        </header>
+
+        <main>
+            <div class="panel">
+                <div class="stat-row">
+                    <div class="stat-icon">🔥</div>
+                    <div class="stat-bar-bg"><div id="bar-act" class="stat-fill" style="width: 40%; background: #e67e22;"></div></div>
+                    <div id="val-act" class="stat-val">40</div>
+                </div>
+                <div class="stat-row">
+                    <div class="stat-icon">🤬</div>
+                    <div class="stat-bar-bg"><div id="bar-tox" class="stat-fill" style="width: 10%; background: #e74c3c;"></div></div>
+                    <div id="val-tox" class="stat-val">10</div>
+                </div>
+                <div class="stat-row">
+                    <div class="stat-icon">🤝</div>
+                    <div class="stat-bar-bg"><div id="bar-fri" class="stat-fill" style="width: 0%; background: #3498db;"></div></div>
+                    <div id="val-fri" class="stat-val">0</div>
+                </div>
+                <div class="stat-row">
+                    <div class="stat-icon">🧠</div>
+                    <div class="stat-bar-bg"><div id="bar-men" class="stat-fill" style="width: 100%; background: #9b59b6;"></div></div>
+                    <div id="val-men" class="stat-val">100</div>
+                </div>
+            </div>
+
+            <div id="pasdak-panel" class="panel" style="font-size:0.8rem; color:#888;">
+                파딱이 없습니다.
+            </div>
+
+            <div id="log-area">
+                <div class="log-entry l-sys">> 시스템 가동.</div>
+            </div>
+        </main>
+
+        <footer>
+            <div class="tab-menu">
+                <button class="tab-btn active" onclick="ui.tab('basic')">운영</button>
+                <button class="tab-btn" onclick="ui.tab('dark')">정치/음지</button>
+                <button class="tab-btn" onclick="ui.tab('shop')">성장</button>
+            </div>
+            <div id="actions-container" class="action-grid"></div>
+        </footer>
+    </div>
+
+    <div id="ending-overlay" class="screen">
+        <h1 id="end-title">ENDING</h1>
+        <p id="end-desc">Description</p>
+        <button class="restart-btn" onclick="location.reload()">새 지구 파기</button>
     </div>
 
 <script>
-    class GallerySim {
-        constructor() {
-            this.maxDays = 60;
-            this.reset();
+/**
+ * Game Configuration & Data
+ */
+const RANKS = [
+    { name: '변방의 마갤', req: 0 },
+    { name: '떠오르는 갤', req: 500 },
+    { name: '실북갤 10위', req: 1500 },
+    { name: '메이저 갤러리', req: 4000 },
+    { name: '디시의 수도', req: 10000 },
+    { name: '인터넷의 중심', req: 25000 }
+];
+
+const ACTIONS = {
+    basic: [
+        { id: 'clean', name: '🗑️ 글 삭제', cost: 0, 
+          eff: (s)=>{ s.tox-=10; s.act-=5; s.cp+=1; s.men-=2; return "똥글을 치웠습니다."; } },
+        { id: 'info', name: '📘 정보글', cost: 0, 
+          eff: (s)=>{ s.act+=5; s.tox-=2; s.men-=3; s.cp+=2; return "유용한 정보를 썼습니다."; } },
+        { id: 'notice', name: '📢 공지 등록', cost: 5, 
+          eff: (s)=>{ s.tox-=20; s.men-=5; return "강력한 공지로 분위기를 잡습니다."; } },
+        { id: 'contest', name: '🏆 대회 개최', cost: 30, req: 1, 
+          eff: (s)=>{ s.act+=30; s.fri+=10; s.men-=10; return "사비 털어 대회를 열었습니다!"; } },
+        { id: 'code', name: '🔒 코드 8자리', cost: 10, req: 2, 
+          eff: (s)=>{ s.tox-=30; s.act-=20; return "유입과 분탕을 동시에 막았습니다."; } },
+        { id: 'rest', name: '🛌 현생 살기', cost: 0, 
+          eff: (s)=>{ s.men+=20; s.act-=10; s.tox+=Math.floor(Math.random()*15); return "갤을 방치하고 쉬었습니다."; } }
+    ],
+    dark: [
+        { id: 'bait', name: '🔥 장작 넣기', cost: 0, class:'btn-risk',
+          eff: (s)=>{ s.act+=20; s.tox+=15; s.cp+=3; s.men-=5; return "갈등을 조장해 리젠을 올립니다."; } },
+        { id: 'manipulate', name: '🗳️ 여론 조작', cost: 10, class:'btn-dirty', req: 1,
+          eff: (s)=>{ s.tox-=10; s.karma+=10; s.men+=5; return "다중이로 여론을 조작했습니다. (업보+10)"; } },
+        { id: 'shame', name: '🔫 고닉 고로시', cost: 5, class:'btn-risk',
+          eff: (s)=>{ s.fri-=25; s.tox+=10; s.men-=10; s.karma+=5; return "네임드 유저를 저격해 쫓아냈습니다."; } },
+        { id: 'friend', name: '🥂 좆목 허용', cost: 0, 
+          eff: (s)=>{ s.fri+=20; s.act+=5; s.cp+=5; return "친목질을 장려합니다. 갤이 썩어갑니다."; } },
+        { id: 'sell_data', name: '💰 개인정보 판매', cost: 0, class:'btn-dirty', req: 3,
+          eff: (s)=>{ s.cp+=50; s.karma+=25; s.men-=10; return "유저 데이터를 팔아 넘겼습니다. (업보+25)"; } },
+        { id: 'dictator', name: '🤴 영구 집권', cost: 100, req: 4,
+          eff: (s)=>{ s.men=100; s.karma+=50; s.tox=0; s.act-=50; return "반대파를 모두 숙청했습니다."; } }
+    ],
+    shop: [
+        { id: 'ad', name: '📡 외부 홍보', cost: 15, 
+          eff: (s)=>{ s.act+=25; s.tox+=15; return "유입이 물밀듯이 들어옵니다."; } },
+        { id: 'alba', name: '👮 알바 호출', cost: 20, 
+          eff: (s)=>{ s.tox-=40; return "알바가 혐짤을 지워줬습니다."; } },
+        { id: 'gacha', name: '📦 파딱 가챠', cost: 40, 
+          eff: (s, g)=>{ return g.gacha(); } },
+        { id: 'alliance', name: '🤝 타갤 동맹', cost: 50, req: 3,
+          eff: (s, g)=>{ g.flags.alliance=true; s.act+=10; return "대형 갤러리와 동맹을 맺었습니다."; } },
+        { id: 'clean_campaign', name: '✨ 클린 캠페인', cost: 30, req: 2,
+          eff: (s)=>{ s.karma = Math.max(0, s.karma-20); s.tox-=10; return "기부 인증을 통해 이미지를 세탁합니다."; } },
+        { id: 'sell_site', name: '🏢 갤러리 매각', cost: 500, req: 5,
+          eff: (s, g)=>{ g.triggerEnding(13); return ""; } }
+    ]
+};
+
+/**
+ * Game Logic
+ */
+class Game {
+    constructor() {
+        this.state = { act: 40, tox: 10, fri: 0, men: 100, cp: 10, karma: 0, day: 1 };
+        this.level = 0;
+        this.exp = 0;
+        this.pasdaks = [];
+        this.flags = { alliance: false, theme: '' };
+        this.isOver = false;
+    }
+
+    start(theme) {
+        this.flags.theme = theme;
+        // Theme Bonuses
+        if(theme === 'idol') { this.state.act=60; this.state.fri=30; this.state.men=80; }
+        if(theme === 'game') { this.state.act=50; this.state.tox=30; }
+        if(theme === 'pol') { this.state.act=70; this.state.tox=60; this.state.karma=10; }
+        if(theme === 'hobby') { this.state.act=20; this.state.men=120; }
+
+        document.getElementById('start-screen').classList.remove('active');
+        document.getElementById('ui-title').innerText = 
+            (theme==='idol'?'연예':(theme==='game'?'게임':(theme==='pol'?'정치':'식물'))) + " 갤러리";
+        
+        ui.update();
+        ui.renderActions();
+    }
+
+    tick() {
+        if(this.isOver) return;
+
+        const s = this.state;
+        
+        // Passive effects
+        let dAct = -2; 
+        let dTox = 0;
+
+        // Pasdak effects
+        this.pasdaks.forEach(p => {
+            if(p.type==='S') { dTox-=5; dAct+=1; }
+            if(p.type==='A') dTox-=2;
+            if(p.type==='F') { dTox+=3; s.men-=1; }
+        });
+
+        // Theme effects
+        if(this.flags.theme === 'pol') dTox += 3;
+        if(this.flags.theme === 'hobby') s.men += 1;
+
+        // High stat penalties
+        if(s.act > 80) dTox += 5;
+        if(s.fri > 60) s.act -= 2;
+
+        s.act = Math.max(0, s.act + dAct);
+        s.tox = Math.max(0, s.tox + dTox);
+        
+        // Level up
+        this.exp += Math.floor(s.act / 2);
+        if(RANKS[this.level+1] && this.exp >= RANKS[this.level+1].req) {
+            this.level++;
+            ui.log(`🎉 등급 상승! [${RANKS[this.level].name}]`, 'l-rare');
+            s.cp += 30; s.men = 100;
+            ui.renderActions();
         }
 
-        reset() {
-            this.state = {
-                day: 1,
-                activity: 40,    // 0~100
-                toxicity: 10,    // 0~100
-                friendship: 5,   // 0~100
-                mental: 100,     // 0~100 (0=Game Over)
-                hasPasdak: false,
-                pasdakTrust: 50, // 파딱 신뢰도 (낮으면 쿠데타)
-                isGameOver: false
-            };
-            this.ui = {
-                log: document.getElementById('game-log'),
-                day: document.getElementById('day-display'),
-                overlay: document.getElementById('overlay'),
-                endingTitle: document.getElementById('ending-title'),
-                endingDesc: document.getElementById('ending-desc'),
-                pasdakBadge: document.getElementById('pasdak-badge')
-            };
-            this.ui.overlay.style.display = 'none';
-            this.ui.log.innerHTML = '<div class="log-entry">> 갤러리 재개장. 이번엔 제발...</div>';
-            this.updateUI();
-        }
-
-        // 유틸리티
-        r(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
-        clamp(val) { return Math.max(0, Math.min(100, val)); }
-
-        // 로그 출력
-        log(msg, type = 'normal') {
-            const div = document.createElement('div');
-            div.className = 'log-entry';
-            if (type === 'bad') div.classList.add('log-bad');
-            if (type === 'good') div.classList.add('log-good');
-            if (type === 'info') div.classList.add('log-info');
-            div.innerHTML = `<span class="log-day">[Day ${this.state.day}]</span> ${msg}`;
-            this.ui.log.appendChild(div);
-            this.ui.log.scrollTop = this.ui.log.scrollHeight;
-        }
-
-        // 상태 변경
-        apply(act, tox, fri, men) {
-            // 파딱이 있으면 어그로 자동 감소 보너스, 대신 활성도 약간 감소 (진압)
-            if (this.state.hasPasdak) {
-                tox -= 5;
-                act -= 2;
-                // 파딱 신뢰도 변화
-                if (tox > 70) this.state.pasdakTrust -= 5; // 갤 더러우면 파딱 멘탈 나감
-            }
-
-            this.state.activity = this.clamp(this.state.activity + act);
-            this.state.toxicity = this.clamp(this.state.toxicity + tox);
-            this.state.friendship = this.clamp(this.state.friendship + fri);
-            this.state.mental = this.clamp(this.state.mental + men);
-        }
-
-        // 행동 로직
-        action(type) {
-            if (this.state.isGameOver) return;
-
-            let msg = "";
-            let s = { a:0, t:0, f:0, m:0 }; // changes
-
-            switch(type) {
-                case 'promote':
-                    s.a = this.r(10, 20); s.t = this.r(5, 15); s.m = -5;
-                    msg = "야갤/실베에 홍보를 돌렸습니다. 유입이 늘어납니다.";
-                    break;
-                case 'censorship':
-                    s.a = this.r(-15, -5); s.t = this.r(-30, -20); s.m = -20;
-                    msg = "완장이 미쳐 날뛰고 있습니다! 글을 닥치는대로 삭제합니다.";
-                    break;
-                case 'bait':
-                    s.a = this.r(15, 25); s.t = this.r(15, 25); s.f = -5; s.m = -5;
-                    msg = "싸움 날만한 떡밥을 던졌습니다. 댓글창이 불탑니다.";
-                    break;
-                case 'info':
-                    s.a = this.r(5, 10); s.t = this.r(-10, -5); s.f = 2; s.m = -10;
-                    msg = "정성스러운 공지글을 썼습니다. 잠시 갤이 정화됩니다.";
-                    break;
-                case 'contest':
-                    s.a = this.r(20, 30); s.t = this.r(-5, 5); s.f = 15; s.m = -15;
-                    msg = "치킨 걸고 대회를 열었습니다. 좆목라인이 형성될 조짐이 보입니다.";
-                    break;
-                case 'recruit':
-                    if (this.state.hasPasdak) {
-                        msg = "이미 파딱이 있습니다. (해임 기능 미구현 - 파딱은 종신입니다)";
-                        s.m = -5;
-                    } else {
-                        this.state.hasPasdak = true;
-                        this.state.pasdakTrust = 70;
-                        s.m = 10; // 멘탈 회복
-                        msg = "노예(파딱)를 한 명 납치했습니다. 관리가 수월해집니다.";
-                    }
-                    break;
-                case 'shame': // 고로시
-                    s.a = 5; s.t = 10; s.f = -20; s.m = -10;
-                    msg = "특정 고닉을 박제하고 고로시했습니다. 친목질이 줄어듭니다.";
-                    break;
-                case 'rest':
-                    s.a = this.r(-10, 5); s.t = this.r(-5, 15); s.m = 30;
-                    msg = "갤을 끄고 현생을 살러 갔습니다. 갤 관리는 운에 맡깁니다.";
-                    break;
-                case 'alliance':
-                    s.a = 25; s.t = 25; s.m = -10;
-                    msg = "옆 갤러리와 동맹을 맺었습니다. 서로 몰려와서 난장판이 됩니다.";
-                    break;
-                case 'allow_friend':
-                    s.a = 5; s.f = 25; s.m = 5;
-                    msg = "오프라인 정모 사진을 개념글에 올렸습니다. 그들만의 리그 시작.";
-                    break;
-            }
-
-            this.apply(s.a, s.t, s.f, s.m);
-            this.log(msg);
-
-            // 파딱 이벤트
-            if (this.state.hasPasdak) {
-                if (Math.random() < 0.2) {
-                    this.state.pasdakTrust -= 10;
-                    this.log("파딱이 혐짤을 지우다 멘탈이 나갔습니다.", "info");
-                }
-            }
-
-            this.randomEvent();
-            this.checkEnding();
-            
-            if (!this.state.isGameOver) {
-                this.state.day++;
-                this.updateUI();
-            }
-        }
-
-        randomEvent() {
-            if (Math.random() > 0.4) return; // 40% 확률
-
-            const roll = Math.random();
-            if (roll < 0.1) {
-                this.log("🚨 실시간 베스트(실베)에 박제되었습니다! 알바 씹새끼!", "bad");
-                this.apply(30, 30, 0, -10);
-            } else if (roll < 0.2) {
-                this.log("📉 서버 오류로 글 작성이 안됩니다.", "bad");
-                this.apply(-20, -10, 0, 0);
-            } else if (roll < 0.3) {
-                this.log("🕵️‍♂️ 고소하겠다는 유입이 등장했습니다.", "bad");
-                this.apply(0, 10, 0, -20);
-            } else if (roll < 0.4) {
-                this.log("🎨 존잘러가 짤을 그려왔습니다.", "good");
-                this.apply(10, -10, 5, 5);
-            } else if (roll < 0.5) {
-                 this.log("🚑 분탕이 할카스를 달렸습니다!! 눈갱!", "bad");
-                 this.apply(0, 20, 0, -30);
-            }
-        }
-
-        checkEnding() {
-            const { activity, toxicity, friendship, mental, day, hasPasdak, pasdakTrust } = this.state;
-
-            // 1. 멘탈 붕괴
-            if (mental <= 0) {
-                this.endGame("🚑 정신병원 엔딩", "주딱의 멘탈이 바사삭 부서졌습니다.<br>당신은 갤러리를 버리고 요양을 떠났습니다.");
-                return;
-            }
-
-            // 2. 파딱 쿠데타 (파딱 있음 + 신뢰도 바닥 + 어그로 높음)
-            if (hasPasdak && pasdakTrust <= 0) {
-                this.endGame("🔪 파딱의 반란", "파딱이 주딱의 직무유기를 고발하고 매니저 위임 신청을 했습니다.<br>갤주가 교체되었습니다.");
-                return;
-            }
-
-            // 3. 정전갤 (활동 0)
-            if (activity <= 0) {
-                this.endGame("❄️ 에베레스트 엔딩", "글 리젠이 멈췄습니다.<br>너무 추워서 아무도 살 수 없습니다.");
-                return;
-            }
-
-            // 4. 폭파 (어그로 100)
-            if (toxicity >= 100) {
-                this.endGame("💣 접근 제한 엔딩", "음란물 및 권리 침해 게시물 폭주.<br>운영정책 위반으로 갤러리가 폐쇄되었습니다.");
-                return;
-            }
-
-            // 5. 좆목 (친목 100)
-            if (friendship >= 100) {
-                this.endGame("🤮 여왕벌 엔딩", "네임드 유저와 그 추종자들이 갤을 점령했습니다.<br>뉴비들은 배척당해 모두 떠났습니다.");
-                return;
-            }
-
-            // 6. 식물갤 (어그로 0, 활동 < 30)
-            if (toxicity <= 0 && activity < 30) {
-                this.endGame("🧘 선비 엔딩", "너무 엄격한 규정에 숨이 막힙니다.<br>노잼이라 다들 떠났습니다.");
-                return;
-            }
-
-            // 7. 실북갤 식민지 (활동 100, 어그로 > 80)
-            if (activity >= 100 && toxicity > 80) {
-                this.endGame("🧟‍♂️ 야갤 식민지 엔딩", "감당할 수 없는 유입이 들이닥쳤습니다.<br>갤러리의 정체성은 사라지고 똥글만 남았습니다.");
-                return;
-            }
-
-            // 승리 조건
-            if (day > this.maxDays) {
-                // 진엔딩 분기
-                if (activity > 80 && toxicity < 50) {
-                    this.endGame("🏆 메이저 갤러리 승격", "축하합니다! 엄청난 활성도와 클린한 관리.<br>디시인사이드 공식 갤러리로 승격되었습니다.", "#ffd700");
-                } else if (friendship > 60) {
-                    this.endGame("👨‍👩‍👧‍👦 대가족 엔딩", "비록 좆목질이라 욕먹지만...<br>우리는 가족이 되었습니다. 행복하면 됐지.", "#74b9ff");
-                } else {
-                    this.endGame("🗿 생존왕 엔딩", "어떻게든 60일을 버텼습니다.<br>하지만 내일도 똥을 치워야 합니다.", "#55efc4");
-                }
-            }
-        }
-
-        endGame(title, desc, color = null) {
-            this.state.isGameOver = true;
-            this.ui.endingTitle.innerText = title;
-            this.ui.endingDesc.innerHTML = desc;
-            if (color) this.ui.endingTitle.style.color = color;
-            else this.ui.endingTitle.style.color = "#d63031";
-            this.ui.overlay.style.display = 'flex';
-        }
-
-        updateUI() {
-            this.ui.day.innerText = this.state.day;
-            this.ui.pasdakBadge.style.display = this.state.hasPasdak ? 'inline-block' : 'none';
-
-            // 바 업데이트
-            this.setBar('activity-bar', this.state.activity, 'val-activity', false);
-            this.setBar('toxicity-bar', this.state.toxicity, 'val-toxicity', true);
-            this.setBar('friendship-bar', this.state.friendship, 'val-friendship', true);
-            this.setBar('mental-bar', this.state.mental, 'val-mental', false);
-            
-            // 상단 진행바
-            document.getElementById('progress-bar').style.width = (this.state.day / this.maxDays * 100) + '%';
-        }
-
-        setBar(id, val, textId, isBadHigh) {
-            const el = document.getElementById(id);
-            const txt = document.getElementById(textId);
-            el.style.width = val + '%';
-            txt.innerText = val;
-
-            // 색상 로직
-            if (id === 'mental-bar') {
-                el.style.backgroundColor = val < 30 ? '#d63031' : '#a29bfe';
-            } else if (isBadHigh) {
-                 el.style.backgroundColor = val > 80 ? '#d63031' : (val > 50 ? '#fdcb6e' : '#00b894');
-            } else {
-                 el.style.backgroundColor = val < 20 ? '#d63031' : (val < 50 ? '#fdcb6e' : '#00b894');
-            }
+        this.checkEvents();
+        this.checkEnding();
+        
+        if(!this.isOver) {
+            s.day++;
+            ui.update();
         }
     }
 
-    const game = new GallerySim();
+    gacha() {
+        const roll = Math.random() * 100;
+        let p;
+        if(roll < 5) p = {type:'S', name:'AI 알바'};
+        else if(roll < 20) p = {type:'A', name:'백수 완장'};
+        else if(roll < 70) p = {type:'B', name:'평범한 유동'};
+        else p = {type:'F', name:'분탕충 파딱'}; // Traitor
 
+        this.pasdaks.push(p);
+        ui.renderPasdaks();
+        return `${p.name} (${p.type}급) 영입!`;
+    }
+
+    checkEvents() {
+        if(Math.random() > 0.3) return;
+        const r = Math.random();
+        if(r < 0.1 && this.state.karma > 30) {
+            ui.log("👮 경찰서에서 출석요구서가 날아왔습니다. (멘탈-20)", "l-bad");
+            this.state.men -= 20;
+        } else if (r < 0.2 && this.state.act > 80) {
+            ui.log("🌪️ 타 사이트에서 좌표를 찍고 침공했습니다!", "l-bad");
+            this.state.tox += 30;
+        } else if (r < 0.3) {
+            ui.log("💰 익명의 유저가 치킨 기프티콘을 보냈습니다. (CP+10)", "l-good");
+            this.state.cp += 10;
+        }
+    }
+
+    checkEnding() {
+        const s = this.state;
+        // 1. Bad Endings
+        if(s.men <= 0) this.triggerEnding(1); // Mental
+        else if(s.tox >= 100) this.triggerEnding(2); // Explosion
+        else if(s.fri >= 100) this.triggerEnding(3); // Friendship
+        else if(s.act <= 0 && s.day > 7) this.triggerEnding(4); // Ghost
+        else if(s.karma >= 100) this.triggerEnding(5); // Arrest
+        
+        // 2. Special Bad/Neutral
+        else if(this.pasdaks.filter(p=>p.type==='F').length >= 3) this.triggerEnding(6); // Coup
+        else if(s.day >= 100) this.triggerEnding(10); // Survival
+
+        // 3. Victory/Special
+        else if(this.level >= 5) this.triggerEnding(11); // Hired
+        else if(s.fri > 90 && s.men > 90) this.triggerEnding(12); // Cult
+    }
+
+    triggerEnding(id) {
+        this.isOver = true;
+        let t = "", d = "";
+        
+        switch(id) {
+            case 1: t="🚑 정신병원 엔딩"; d="악플과 도배를 견디지 못하고<br>당신의 멘탈은 산산조각 났습니다."; break;
+            case 2: t="💣 갤러리 폭파 엔딩"; d="음란물 및 불법 게시물 방치로<br>운영원칙에 의해 접근 제한되었습니다."; break;
+            case 3: t="🤮 그들만의 리그"; d="완장과 네임드의 친목질이 역겨워서<br>유입들이 모두 도망갔습니다."; break;
+            case 4: t="❄️ 정전갤 엔딩"; d="글 리젠 0.<br>아무도 찾지 않는 유령 도시가 되었습니다."; break;
+            case 5: t="🚔 구속 수사 엔딩"; d="여론 조작 및 개인정보 판매 혐의로<br>체포되었습니다. 업보를 청산하세요."; break;
+            case 6: t="🔪 파딱의 반란"; d="관리 권한을 가진 분탕 파딱들이<br>갤주 위임 투표를 강행했습니다."; break;
+            case 10: t="🗿 고인물 엔딩"; d="100일 생존 달성.<br>당신은 디시인사이드의 살아있는 화석입니다."; break;
+            case 11: t="💼 본사 입사 엔딩"; d="탁월한 관리 능력을 인정받아<br>김유식 머장님이 당신을 채용했습니다."; break;
+            case 12: t="🙏 사이비 교주 엔딩"; d="유저들이 당신을 신으로 모십니다.<br>갤러리는 종교 단체가 되었습니다."; break;
+            case 13: t="💸 먹튀 엔딩"; d="갤러리를 중국 기업에 비싸게 팔아넘기고<br>하와이로 도망갔습니다."; break;
+        }
+        
+        document.getElementById('end-title').innerHTML = t;
+        document.getElementById('end-desc').innerHTML = d;
+        document.getElementById('ending-overlay').classList.add('active');
+    }
+}
+
+/**
+ * UI Controller
+ */
+const ui = {
+    tabId: 'basic',
+
+    update: () => {
+        const s = game.state;
+        document.getElementById('ui-rank').innerText = RANKS[game.level].name;
+        document.getElementById('ui-cp').innerText = s.cp;
+        document.getElementById('ui-day').innerText = s.day;
+        document.getElementById('ui-karma').innerText = s.karma;
+
+        ui.bar('act', s.act);
+        ui.bar('tox', s.tox);
+        ui.bar('fri', s.fri);
+        ui.bar('men', s.men);
+
+        // Update button states
+        document.querySelectorAll('.act-btn').forEach(btn => {
+            const cost = parseInt(btn.dataset.cost);
+            const req = parseInt(btn.dataset.req || 0);
+            if(s.cp < cost || game.level < req) btn.disabled = true;
+            else btn.disabled = false;
+        });
+    },
+
+    bar: (id, val) => {
+        const el = document.getElementById(`bar-${id}`);
+        const txt = document.getElementById(`val-${id}`);
+        val = Math.min(100, Math.max(0, val));
+        el.style.width = val + '%';
+        txt.innerText = val;
+        
+        if(id === 'men' && val < 30) el.style.background = '#e74c3c';
+        else if(id === 'men') el.style.background = '#9b59b6';
+    },
+
+    log: (msg, cls='l-sys') => {
+        const div = document.createElement('div');
+        div.className = `log-entry ${cls}`;
+        div.innerHTML = `> ${msg}`;
+        const area = document.getElementById('log-area');
+        area.appendChild(div);
+        area.scrollTop = area.scrollHeight;
+    },
+
+    tab: (id) => {
+        ui.tabId = id;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        ui.renderActions();
+    },
+
+    renderActions: () => {
+        const container = document.getElementById('actions-container');
+        container.innerHTML = '';
+        const list = ACTIONS[ui.tabId];
+
+        list.forEach(act => {
+            const btn = document.createElement('button');
+            btn.className = `act-btn ${act.class || ''}`;
+            btn.dataset.cost = act.cost;
+            if(act.req) btn.dataset.req = act.req;
+            
+            // Text logic
+            let html = `<span>${act.name}</span><span class="act-cost">${act.cost>0 ? act.cost+' CP' : 'Free'}</span>`;
+            if(act.req && game.level < act.req) {
+                 html = `<span style="font-size:1.2rem">🔒</span><span class="act-cost">LV.${act.req} 필요</span>`;
+            }
+            btn.innerHTML = html;
+
+            btn.onclick = (e) => {
+                if(game.state.cp < act.cost) return;
+                game.state.cp -= act.cost;
+                const msg = act.eff(game.state, game);
+                ui.log(msg, ui.tabId==='dark' ? 'l-warn' : 'l-sys');
+                ui.floatText(e, `-${act.cost} CP`);
+                game.tick();
+            };
+            container.appendChild(btn);
+        });
+        ui.update();
+    },
+
+    renderPasdaks: () => {
+        const p = document.getElementById('pasdak-panel');
+        if(game.pasdaks.length === 0) { p.innerHTML = "파딱이 없습니다."; return; }
+        p.innerHTML = game.pasdaks.map(x => 
+            `<span style="color:${x.type==='S'?'#f1c40f':(x.type==='F'?'#e74c3c':'#aaa')}; border:1px solid #444; padding:2px 5px; margin-right:4px; border-radius:4px;">[${x.type}] ${x.name}</span>`
+        ).join('');
+    },
+
+    floatText: (e, txt) => {
+        const f = document.createElement('div');
+        f.className = 'float-txt';
+        f.innerText = txt;
+        f.style.left = e.clientX + 'px';
+        f.style.top = e.clientY + 'px';
+        f.style.color = '#fff';
+        document.body.appendChild(f);
+        setTimeout(()=>f.remove(), 1000);
+    }
+};
+
+const game = new Game();
 </script>
 </body>
 </html>
