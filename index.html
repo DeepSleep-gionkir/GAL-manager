@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>갤러리 살리기 시뮬레이터</title>
+    <style>
+        :root {
+            --bg-color: #2d3436;
+            --text-color: #dfe6e9;
+            --accent-color: #0984e3;
+            --danger-color: #d63031;
+            --warning-color: #fdcb6e;
+            --success-color: #00b894;
+        }
+
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        h1 {
+            margin-top: 0;
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #636e72;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        /* Stats Bars */
+        .status-bar {
+            margin-bottom: 15px;
+        }
+        .status-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .bar-container {
+            height: 20px;
+            background-color: #636e72;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%;
+            width: 50%;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        /* Log Area */
+        #game-log {
+            flex: 1;
+            background-color: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            overflow-y: auto;
+            font-size: 14px;
+            border: 1px solid #444;
+            min-height: 150px;
+        }
+        .log-entry { margin-bottom: 5px; border-bottom: 1px dashed #333; padding-bottom: 2px; }
+        .log-day { color: #ffeaa7; font-weight: bold; }
+        .log-bad { color: var(--danger-color); }
+        .log-good { color: var(--success-color); }
+
+        /* Action Grid */
+        .actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        button {
+            padding: 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:active { transform: scale(0.98); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); }
+
+        .btn-normal { background-color: var(--accent-color); }
+        .btn-danger { background-color: var(--danger-color); }
+        .btn-warning { background-color: #e17055; }
+        .btn-special { background-color: #6c5ce7; }
+
+        /* Game Over Overlay */
+        #overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 100;
+            text-align: center;
+        }
+        #ending-title { font-size: 2rem; color: var(--danger-color); margin-bottom: 20px; }
+        #ending-desc { font-size: 1.2rem; margin-bottom: 30px; max-width: 80%; line-height: 1.5; }
+        #restart-btn {
+            background-color: var(--success-color);
+            padding: 15px 40px;
+            font-size: 1.5rem;
+        }
+
+        .tooltip {
+            font-size: 0.8rem;
+            color: #b2bec3;
+            display: block;
+            margin-top: 5px;
+            font-weight: normal;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>📉 갤러리 살리기 시뮬레이터</h1>
+
+    <div class="container">
+        <div class="status-bar">
+            <div class="status-label">
+                <span>📅 생존일: <span id="day-display">1</span>일차</span>
+                <span>🔥 갤러리 활성도 (리젠)</span>
+            </div>
+            <div class="bar-container">
+                <div id="activity-bar" class="bar-fill" style="width: 50%; background-color: #00b894;"></div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-label">
+                <span>🤬 어그로/분탕 농도</span>
+                <span>💀 망갤 위험도</span>
+            </div>
+            <div class="bar-container">
+                <div id="toxicity-bar" class="bar-fill" style="width: 20%; background-color: #fdcb6e;"></div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-label">
+                <span>🤝 친목질(좆목) 수치</span>
+            </div>
+            <div class="bar-container">
+                <div id="friendship-bar" class="bar-fill" style="width: 10%; background-color: #74b9ff;"></div>
+            </div>
+        </div>
+
+        <div id="game-log">
+            <div class="log-entry">> 마이너 갤러리가 개설되었습니다. 주딱이 되신 걸 환영합니다.</div>
+            <div class="log-entry">> 목표: 갤러리를 폭파시키지 않고 30일간 생존하세요.</div>
+        </div>
+
+        <div class="actions">
+            <button class="btn-normal" onclick="action('promote')">
+                홍보하기 (입갤 유도)
+                <span class="tooltip">활성도↑ 어그로↑</span>
+            </button>
+            <button class="btn-danger" onclick="action('ban')">
+                30일 차단 난사 (완장질)
+                <span class="tooltip">어그로↓↓ 활성도↓↓</span>
+            </button>
+            <button class="btn-warning" onclick="action('bait')">
+                어그로 끌기 (분탕)
+                <span class="tooltip">활성도↑↑ 어그로↑↑ 친목↓</span>
+            </button>
+            <button class="btn-special" onclick="action('info')">
+                양질의 정보글 작성
+                <span class="tooltip">활성도약간↑ 어그로약간↓</span>
+            </button>
+            <button class="btn-danger" onclick="action('close_friend')">
+                닉언급/친목 허용
+                <span class="tooltip">활성도↑ 친목↑↑↑</span>
+            </button>
+            <button class="btn-normal" onclick="action('ignore')">
+                방치하기 (직무유기)
+                <span class="tooltip">변화폭 랜덤 (위험)</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="overlay">
+        <h2 id="ending-title">GAME OVER</h2>
+        <p id="ending-desc">갤러리가 망했습니다.</p>
+        <button id="restart-btn" onclick="resetGame()">새 지구 파기 (재시작)</button>
+    </div>
+
+<script>
+    // Game State
+    let state = {
+        day: 1,
+        activity: 50,    // 0: 정전갤, 100: 실북갤(통제불능)
+        toxicity: 20,    // 0: 클린함(노잼), 100: 갤기장(싸움판)
+        friendship: 10,  // 0: 삭막함, 100: 좆목갤(망함)
+        isGameOver: false
+    };
+
+    const maxDays = 30;
+
+    // UI Elements
+    const logEl = document.getElementById('game-log');
+    const dayEl = document.getElementById('day-display');
+    const activityBar = document.getElementById('activity-bar');
+    const toxicityBar = document.getElementById('toxicity-bar');
+    const friendshipBar = document.getElementById('friendship-bar');
+    const overlay = document.getElementById('overlay');
+    const endingTitle = document.getElementById('ending-title');
+    const endingDesc = document.getElementById('ending-desc');
+
+    function updateUI() {
+        dayEl.innerText = state.day;
+
+        // Update Bars
+        setBar(activityBar, state.activity);
+        setBar(toxicityBar, state.toxicity);
+        setBar(friendshipBar, state.friendship);
+
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function setBar(element, value) {
+        element.style.width = value + '%';
+        if (value < 30) element.style.backgroundColor = '#00b894'; // Green
+        else if (value < 70) element.style.backgroundColor = '#fdcb6e'; // Yellow
+        else element.style.backgroundColor = '#d63031'; // Red
+    }
+
+    function addLog(msg, type = 'normal') {
+        const div = document.createElement('div');
+        div.className = 'log-entry';
+        let prefix = `<span class="log-day">[Day ${state.day}]</span> `;
+        
+        if (type === 'bad') div.classList.add('log-bad');
+        if (type === 'good') div.classList.add('log-good');
+        
+        div.innerHTML = prefix + msg;
+        logEl.appendChild(div);
+    }
+
+    // Core Game Logic
+    function action(type) {
+        if (state.isGameOver) return;
+
+        let logMsg = "";
+        let actChange = 0;
+        let toxChange = 0;
+        let friChange = 0;
+
+        // Base Logic for Choices
+        switch(type) {
+            case 'promote':
+                actChange = r(15, 25);
+                toxChange = r(5, 15);
+                friChange = r(-5, 0);
+                logMsg = "타 갤러리에 홍보를 다녔습니다. 유입이 늘었지만 분탕도 섞여 들어옵니다.";
+                break;
+            case 'ban':
+                actChange = r(-20, -10);
+                toxChange = r(-25, -15);
+                friChange = r(0, 5); // 완장 찬양하는 무리 생김
+                logMsg = "30일 차단을 난사했습니다. 갤러리가 조용해졌지만 글젠도 죽었습니다.";
+                break;
+            case 'bait':
+                actChange = r(20, 30);
+                toxChange = r(20, 30);
+                friChange = r(-10, -5);
+                logMsg = "자극적인 떡밥을 굴렸습니다. 갤러리가 불타오릅니다!";
+                break;
+            case 'info':
+                actChange = r(5, 10);
+                toxChange = r(-10, -5);
+                friChange = r(0, 2);
+                logMsg = "장문의 정보글을 썼습니다. 유용하지만 반응이 미적지근합니다.";
+                break;
+            case 'close_friend':
+                actChange = r(5, 15);
+                toxChange = r(-5, 5);
+                friChange = r(15, 25);
+                logMsg = "닉네임 언급을 허용했습니다. 자기들끼리 아는 얘기를 하기 시작합니다.";
+                break;
+            case 'ignore':
+                actChange = r(-10, 10);
+                toxChange = r(-5, 15);
+                friChange = r(0, 5);
+                logMsg = "아무것도 안하고 방치했습니다. 자연 상태로 흘러갑니다.";
+                break;
+        }
+
+        // Apply changes
+        applyStats(actChange, toxChange, friChange);
+        addLog(logMsg);
+
+        // Random Event
+        triggerRandomEvent();
+
+        // Check Endings
+        checkGameStatus();
+        
+        if (!state.isGameOver) {
+            state.day++;
+            updateUI();
+        }
+    }
+
+    function r(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function applyStats(a, t, f) {
+        state.activity = clamp(state.activity + a);
+        state.toxicity = clamp(state.toxicity + t);
+        state.friendship = clamp(state.friendship + f);
+    }
+
+    function clamp(val) {
+        return Math.max(0, Math.min(100, val));
+    }
+
+    function triggerRandomEvent() {
+        if (Math.random() > 0.3) return; // 30% chance
+
+        const eventRoll = Math.random();
+        if (eventRoll < 0.2) {
+            addLog("📢 실시간 베스트 갤러리에 등재되었습니다! (유입 폭주)", "bad");
+            applyStats(30, 20, -5);
+        } else if (eventRoll < 0.4) {
+            addLog("👮‍♂️ 알바(운영자)가 개념글을 삭제했습니다. (민심 흉흉)", "bad");
+            applyStats(-10, 10, 0);
+        } else if (eventRoll < 0.6) {
+            addLog("🎨 금손이 짤을 그려왔습니다. (분위기 정화)", "good");
+            applyStats(10, -10, 5);
+        } else if (eventRoll < 0.8) {
+            addLog("🩸 옆 갤러리에서 침공을 왔습니다!", "bad");
+            applyStats(20, 30, 0);
+        } else {
+             addLog("💤 새벽이라 글 리젠이 멈췄습니다.", "normal");
+             applyStats(-15, -5, 0);
+        }
+    }
+
+    function checkGameStatus() {
+        // Ending Conditions
+        
+        // 1. 정전갤 엔딩 (활동 0)
+        if (state.activity <= 0) {
+            gameOver("❄️ 정전갤 엔딩", "아무도 글을 쓰지 않습니다.<br>결국 갤러리 승격에 실패하고 마이너 갤러리가 폐쇄됩니다.");
+            return;
+        }
+
+        // 2. 갤기장 엔딩 (어그로 100)
+        if (state.toxicity >= 100) {
+            gameOver("💣 갤기장/폭파 엔딩", "온갖 혐오 게시물과 도배로 가득 찼습니다.<br>운영 원칙 위반으로 접근 제한 조치되었습니다.");
+            return;
+        }
+
+        // 3. 식물갤 엔딩 (어그로 0, 활동 낮음)
+        if (state.toxicity <= 0 && state.activity < 50) {
+            gameOver("🌿 식물갤 엔딩", "너무 엄격한 규정 때문에 노잼이 되었습니다.<br>사람들이 더 재미있는 곳으로 떠났습니다.");
+            return;
+        }
+
+        // 4. 좆목갤 엔딩 (친목 100)
+        if (state.friendship >= 100) {
+            gameOver("🤮 좆목/네임드화 엔딩", "그들만의 리그가 완성되었습니다.<br>뉴비 배척이 심해져 갤러리가 고립되어 썩었습니다.");
+            return;
+        }
+
+        // 5. 실북갤 점령 엔딩 (활동 100, 어그로 높음)
+        if (state.activity >= 100 && state.toxicity > 70) {
+            gameOver("🧟‍♂️ 실북갤 점령 엔딩", "너무 유명해져서 통제가 불가능합니다.<br>원주민들은 다 떠나고 야갤 식민지가 되었습니다.");
+            return;
+        }
+
+        // Victory Condition
+        if (state.day > maxDays) {
+            gameWin();
+        }
+    }
+
+    function gameOver(title, desc) {
+        state.isGameOver = true;
+        endingTitle.innerText = title;
+        endingTitle.style.color = "#d63031";
+        endingDesc.innerHTML = desc;
+        overlay.style.display = 'flex';
+    }
+
+    function gameWin() {
+        state.isGameOver = true;
+        endingTitle.innerText = "🏆 전설의 주딱 등극";
+        endingTitle.style.color = "#ffeaa7";
+        endingDesc.innerHTML = `축하합니다!<br>30일 동안 온갖 똥을 피하며 갤러리를 지켜냈습니다.<br><br>최종 스탯:<br>활성도: ${state.activity} | 어그로: ${state.toxicity} | 친목: ${state.friendship}`;
+        overlay.style.display = 'flex';
+        document.getElementById('restart-btn').innerText = "다시 고통받기";
+    }
+
+    function resetGame() {
+        state = {
+            day: 1,
+            activity: 50,
+            toxicity: 20,
+            friendship: 10,
+            isGameOver: false
+        };
+        logEl.innerHTML = '<div class="log-entry">> 새로운 갤러리가 개설되었습니다. 이번엔 잘 해봅시다.</div>';
+        overlay.style.display = 'none';
+        updateUI();
+    }
+
+    // Init
+    updateUI();
+
+</script>
+</body>
+</html>
