@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>갤러리 매니저: NO LIMITS</title>
+    <title>갤러리 매니저: NO LIMITS (Fixed)</title>
     <style>
         :root {
             --bg-dark: #0f0f0f;
@@ -37,10 +37,10 @@
             position: absolute; inset: 0;
             background: var(--bg-dark);
             z-index: 10;
-            display: none;
+            display: none; /* 기본 숨김 */
             flex-direction: column;
         }
-        .screen.active { display: flex; }
+        .screen.active { display: flex; } /* active 클래스 붙으면 보임 */
 
         /* Start Screen */
         #start-screen {
@@ -70,6 +70,7 @@
             background: #000; border-bottom: 1px solid var(--border);
             padding: 8px 12px;
             display: flex; justify-content: space-between; align-items: center;
+            flex-shrink: 0;
         }
         .badge {
             padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;
@@ -80,7 +81,7 @@
         /* News Ticker */
         .ticker-wrap {
             width: 100%; background: #111; border-bottom: 1px solid var(--border);
-            overflow: hidden; height: 24px; display: flex; align-items: center;
+            overflow: hidden; height: 24px; display: flex; align-items: center; flex-shrink: 0;
         }
         .ticker {
             display: inline-block; white-space: nowrap;
@@ -109,6 +110,8 @@
             justify-content: space-between; align-items: center; border-left: 4px solid #555;
         }
         .p-msg { font-size: 0.75rem; color: #888; margin-top: 2px; font-style: italic; }
+        .p-S { border-color: var(--gold); } .p-A { border-color: var(--cp); } 
+        .p-B { border-color: var(--accent); } .p-F { border-color: var(--danger); background: #2c0b0b; }
 
         /* Logs */
         #log-container {
@@ -118,9 +121,10 @@
         }
         .log-line { margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px solid #111; line-height: 1.4; }
         .log-time { color: #555; font-size: 0.75rem; margin-right: 5px; }
+        .log-chat { color: var(--accent); }
         
         /* Footer Tabs */
-        footer { background: #111; border-top: 1px solid var(--border); padding: 5px; }
+        footer { background: #111; border-top: 1px solid var(--border); padding: 5px; flex-shrink: 0; }
         .tabs { display: flex; gap: 5px; margin-bottom: 5px; }
         .tab-btn {
             flex: 1; background: #222; border: none; color: #777; padding: 10px;
@@ -143,6 +147,8 @@
         .act-name { font-size: 0.8rem; font-weight: bold; margin-bottom: 4px; }
         .act-cost { font-size: 0.7rem; color: var(--success); }
         .act-req { font-size: 0.7rem; color: var(--danger); position: absolute; bottom: 2px; }
+        .btn-grow { border-bottom-color: var(--success); }
+        .btn-risk { border-bottom-color: var(--danger); }
 
         /* End Overlay */
         #ending-screen {
@@ -166,7 +172,7 @@
 <body>
 
     <div id="start-screen" class="screen active">
-        <h1 style="font-size: 2rem; color:white; text-shadow: 0 4px 10px rgba(0,0,0,0.5);">GALLERY MANAGER<br><span style="font-size:0.5em; color:var(--warn);">V8.0 NO LIMITS</span></h1>
+        <h1 style="font-size: 2rem; color:white; text-shadow: 0 4px 10px rgba(0,0,0,0.5);">GALLERY MANAGER<br><span style="font-size:0.5em; color:var(--warn);">V8.0 FIXED</span></h1>
         <p style="color:rgba(255,255,255,0.7);">365일 생존 | AI 파딱 | 연구 시스템 | 20종 이벤트</p>
         
         <div class="theme-container">
@@ -353,7 +359,7 @@ class Game {
     constructor() { this.reset(); }
 
     reset() {
-        this.state = { act:40, tox:10, fri:0, men:100, cp:20, karma:0, day:1 };
+        this.state = { act:40, tox:10, fri:0, men:100, cp:30, karma:0, day:1 }; // CP initialized higher for easier start
         this.pasdaks = [];
         this.perks = { server:false, bot:false };
         this.theme = null;
@@ -368,10 +374,13 @@ class Game {
         const s = this.state;
         if(theme === 'idol') { s.act=70; s.fri=20; }
         if(theme === 'game') { s.act=50; s.tox=20; }
-        if(theme === 'stock') { s.cp=60; s.men=60; }
+        if(theme === 'stock') { s.cp=80; s.men=60; }
         if(theme === 'pol') { s.tox=40; s.karma=10; s.act=80; }
 
+        // **FIX**: Correctly switching screens
         document.getElementById('start-screen').classList.remove('active');
+        document.getElementById('game-screen').classList.add('active');
+
         ui.log(`갤러리가 개설되었습니다. 테마: ${theme.toUpperCase()}`);
         ui.update();
         ui.renderActions();
@@ -438,7 +447,7 @@ class Game {
             // Pasdak Talk
             if(Math.random() < 0.05) {
                 const talk = p.rank==='F' ? "완장님 일 좀 하죠?" : "분탕 다 잡았습니다.";
-                ui.log(`[${p.name}]: ${talk}`, "l-chat");
+                ui.log(`[${p.name}]: ${talk}`, "log-chat");
             }
             // Loyalty
             if(Math.random() < 0.1) p.loy -= 2;
