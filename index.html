@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>갤러리 매니저: 유니버스</title>
+    <title>갤러리 매니저: 유니버스 (수정판)</title>
     <style>
         :root {
             --bg-color: #121212;
@@ -32,12 +32,12 @@
         /* --- Screens --- */
         .screen {
             position: absolute; inset: 0;
-            display: none;
+            display: none; /* 기본적으로 숨김 */
             flex-direction: column;
             background: var(--bg-color);
             z-index: 10;
         }
-        .screen.active { display: flex; }
+        .screen.active { display: flex; } /* active 클래스가 있으면 보임 */
 
         /* Start Screen */
         #start-screen {
@@ -46,6 +46,7 @@
             padding: 20px;
             text-align: center;
             background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            z-index: 20;
         }
         .theme-grid {
             display: grid;
@@ -71,7 +72,7 @@
         /* Game Header */
         header {
             background: #000;
-            padding: 8px 12px;
+            padding: 10px 15px;
             border-bottom: 1px solid #333;
             flex-shrink: 0;
             display: flex;
@@ -107,11 +108,11 @@
         }
 
         /* Stat Bars */
-        .stat-row { display: flex; align-items: center; margin-bottom: 6px; font-size: 0.85rem; }
-        .stat-icon { width: 20px; text-align: center; margin-right: 8px; }
-        .stat-bar-bg { flex: 1; height: 8px; background: #333; border-radius: 4px; overflow: hidden; }
+        .stat-row { display: flex; align-items: center; margin-bottom: 8px; font-size: 0.9rem; }
+        .stat-icon { width: 25px; text-align: center; margin-right: 8px; font-size: 1.1rem;}
+        .stat-bar-bg { flex: 1; height: 10px; background: #333; border-radius: 5px; overflow: hidden; }
         .stat-fill { height: 100%; transition: width 0.3s; }
-        .stat-val { width: 30px; text-align: right; font-family: monospace; font-size: 0.8rem; }
+        .stat-val { width: 35px; text-align: right; font-family: monospace; font-size: 0.9rem; font-weight: bold;}
 
         /* Log */
         #log-area {
@@ -119,14 +120,14 @@
             background: #000;
             border: 1px solid #333;
             border-radius: 4px;
-            padding: 8px;
+            padding: 10px;
             font-family: 'D2Coding', monospace;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             overflow-y: auto;
             min-height: 120px;
-            line-height: 1.4;
+            line-height: 1.5;
         }
-        .log-entry { border-bottom: 1px solid #1a1a1a; padding-bottom: 2px; margin-bottom: 2px; }
+        .log-entry { border-bottom: 1px solid #1a1a1a; padding-bottom: 3px; margin-bottom: 3px; }
         .l-sys { color: #aaa; }
         .l-good { color: #2ecc71; }
         .l-bad { color: #e74c3c; }
@@ -137,30 +138,28 @@
         footer { background: #111; padding: 10px; flex-shrink: 0; border-top: 1px solid #333; }
         .tab-menu { display: flex; gap: 5px; margin-bottom: 8px; }
         .tab-btn {
-            flex: 1; padding: 8px; background: #222; border: none; color: #777;
-            border-radius: 4px; font-weight: bold; cursor: pointer;
+            flex: 1; padding: 10px; background: #222; border: none; color: #777;
+            border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s;
         }
         .tab-btn.active { background: var(--accent); color: #fff; }
 
         .action-grid {
             display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
-            height: 160px; overflow-y: auto;
+            height: 180px; overflow-y: auto;
         }
         .act-btn {
             background: #2c3e50; border: none; border-radius: 4px; color: #fff;
-            padding: 8px 4px; font-size: 0.8rem; cursor: pointer;
+            padding: 8px 4px; font-size: 0.85rem; cursor: pointer;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            position: relative; transition: 0.1s; min-height: 50px;
+            position: relative; transition: 0.1s; min-height: 55px;
         }
         .act-btn:active { transform: scale(0.96); }
-        .act-btn:disabled { opacity: 0.3; filter: grayscale(1); }
-        .act-cost { font-size: 0.7rem; color: var(--cp-color); margin-top: 2px; }
-        .act-desc { display: none; } /* Tooltip logic handled by simple text for now */
-
-        /* Styles for specific button types */
-        .btn-dirty { border-bottom: 2px solid #8e44ad; } /* Karma actions */
-        .btn-clean { border-bottom: 2px solid #27ae60; }
-        .btn-risk { border-bottom: 2px solid #c0392b; }
+        .act-btn:disabled { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; }
+        .act-cost { font-size: 0.75rem; color: var(--cp-color); margin-top: 4px; }
+        
+        .btn-dirty { border-bottom: 3px solid #8e44ad; } 
+        .btn-risk { border-bottom: 3px solid #c0392b; }
+        .btn-grow { border-bottom: 3px solid #27ae60; }
 
         /* Ending Overlay */
         #ending-overlay {
@@ -172,7 +171,7 @@
         #end-title { font-size: 2.5rem; margin-bottom: 20px; font-weight: 900; color: #e74c3c; }
         #end-desc { font-size: 1.1rem; color: #ccc; margin-bottom: 40px; line-height: 1.6; max-width: 600px; }
         .restart-btn {
-            background: var(--cp-color); border: none; padding: 15px 40px;
+            background: var(--cp-color); border: none; padding: 15px 40px; color: #000;
             font-size: 1.2rem; font-weight: bold; border-radius: 50px; cursor: pointer;
             box-shadow: 0 0 20px rgba(46, 204, 113, 0.4);
         }
@@ -189,7 +188,7 @@
 <body>
 
     <div id="start-screen" class="screen active">
-        <h1 style="color:#fff; text-shadow:0 0 10px #fff;">갤러리 매니저: 유니버스</h1>
+        <h1 style="color:#fff; text-shadow:0 0 10px #fff; margin-bottom:10px;">갤러리 매니저<br><span style="font-size:0.6em; color:#ddd;">UNIVERSE</span></h1>
         <p style="color:#ddd;">운영할 갤러리의 주제를 선택하세요.</p>
         
         <div class="theme-grid">
@@ -249,20 +248,20 @@
                 </div>
             </div>
 
-            <div id="pasdak-panel" class="panel" style="font-size:0.8rem; color:#888;">
-                파딱이 없습니다.
+            <div id="pasdak-panel" class="panel" style="font-size:0.85rem; color:#aaa; min-height: 20px;">
+                파딱(부매니저)이 없습니다.
             </div>
 
             <div id="log-area">
-                <div class="log-entry l-sys">> 시스템 가동.</div>
+                <div class="log-entry l-sys">> 시스템 가동. 주제를 선택하여 시작하세요.</div>
             </div>
         </main>
 
         <footer>
             <div class="tab-menu">
-                <button class="tab-btn active" onclick="ui.tab('basic')">운영</button>
-                <button class="tab-btn" onclick="ui.tab('dark')">정치/음지</button>
-                <button class="tab-btn" onclick="ui.tab('shop')">성장</button>
+                <button class="tab-btn active" onclick="ui.tab('basic')">🛠 운영</button>
+                <button class="tab-btn" onclick="ui.tab('dark')">⚖️ 정치/음지</button>
+                <button class="tab-btn" onclick="ui.tab('shop')">✨ 성장</button>
             </div>
             <div id="actions-container" class="action-grid"></div>
         </footer>
@@ -280,31 +279,31 @@
  */
 const RANKS = [
     { name: '변방의 마갤', req: 0 },
-    { name: '떠오르는 갤', req: 500 },
-    { name: '실북갤 10위', req: 1500 },
-    { name: '메이저 갤러리', req: 4000 },
-    { name: '디시의 수도', req: 10000 },
-    { name: '인터넷의 중심', req: 25000 }
+    { name: '떠오르는 갤', req: 400 },
+    { name: '실북갤 10위', req: 1200 },
+    { name: '메이저 갤러리', req: 3000 },
+    { name: '디시의 수도', req: 8000 },
+    { name: '인터넷의 중심', req: 20000 }
 ];
 
 const ACTIONS = {
     basic: [
         { id: 'clean', name: '🗑️ 글 삭제', cost: 0, 
-          eff: (s)=>{ s.tox-=10; s.act-=5; s.cp+=1; s.men-=2; return "똥글을 치웠습니다."; } },
+          eff: (s)=>{ s.tox-=10; s.act-=5; s.cp+=1; s.men-=2; return "똥글을 치웠습니다. (CP+1)"; } },
         { id: 'info', name: '📘 정보글', cost: 0, 
-          eff: (s)=>{ s.act+=5; s.tox-=2; s.men-=3; s.cp+=2; return "유용한 정보를 썼습니다."; } },
+          eff: (s)=>{ s.act+=5; s.tox-=2; s.men-=3; s.cp+=2; return "유용한 정보를 썼습니다. (CP+2)"; } },
         { id: 'notice', name: '📢 공지 등록', cost: 5, 
           eff: (s)=>{ s.tox-=20; s.men-=5; return "강력한 공지로 분위기를 잡습니다."; } },
         { id: 'contest', name: '🏆 대회 개최', cost: 30, req: 1, 
-          eff: (s)=>{ s.act+=30; s.fri+=10; s.men-=10; return "사비 털어 대회를 열었습니다!"; } },
+          eff: (s)=>{ s.act+=30; s.fri+=10; s.men-=10; return "사비 털어 대회를 열었습니다! 유입 폭발!"; } },
         { id: 'code', name: '🔒 코드 8자리', cost: 10, req: 2, 
           eff: (s)=>{ s.tox-=30; s.act-=20; return "유입과 분탕을 동시에 막았습니다."; } },
         { id: 'rest', name: '🛌 현생 살기', cost: 0, 
-          eff: (s)=>{ s.men+=20; s.act-=10; s.tox+=Math.floor(Math.random()*15); return "갤을 방치하고 쉬었습니다."; } }
+          eff: (s)=>{ s.men+=20; s.act-=10; s.tox+=Math.floor(Math.random()*15); return "갤을 방치하고 쉬었습니다. (멘탈 회복)"; } }
     ],
     dark: [
         { id: 'bait', name: '🔥 장작 넣기', cost: 0, class:'btn-risk',
-          eff: (s)=>{ s.act+=20; s.tox+=15; s.cp+=3; s.men-=5; return "갈등을 조장해 리젠을 올립니다."; } },
+          eff: (s)=>{ s.act+=20; s.tox+=15; s.cp+=3; s.men-=5; return "갈등을 조장해 리젠을 올립니다. (CP+3)"; } },
         { id: 'manipulate', name: '🗳️ 여론 조작', cost: 10, class:'btn-dirty', req: 1,
           eff: (s)=>{ s.tox-=10; s.karma+=10; s.men+=5; return "다중이로 여론을 조작했습니다. (업보+10)"; } },
         { id: 'shame', name: '🔫 고닉 고로시', cost: 5, class:'btn-risk',
@@ -314,20 +313,20 @@ const ACTIONS = {
         { id: 'sell_data', name: '💰 개인정보 판매', cost: 0, class:'btn-dirty', req: 3,
           eff: (s)=>{ s.cp+=50; s.karma+=25; s.men-=10; return "유저 데이터를 팔아 넘겼습니다. (업보+25)"; } },
         { id: 'dictator', name: '🤴 영구 집권', cost: 100, req: 4,
-          eff: (s)=>{ s.men=100; s.karma+=50; s.tox=0; s.act-=50; return "반대파를 모두 숙청했습니다."; } }
+          eff: (s)=>{ s.men=100; s.karma+=50; s.tox=0; s.act-=50; return "반대파를 모두 숙청했습니다. (멘탈 풀회복)"; } }
     ],
     shop: [
-        { id: 'ad', name: '📡 외부 홍보', cost: 15, 
+        { id: 'ad', name: '📡 외부 홍보', cost: 15, class: 'btn-grow',
           eff: (s)=>{ s.act+=25; s.tox+=15; return "유입이 물밀듯이 들어옵니다."; } },
-        { id: 'alba', name: '👮 알바 호출', cost: 20, 
+        { id: 'alba', name: '👮 알바 호출', cost: 20, class: 'btn-grow',
           eff: (s)=>{ s.tox-=40; return "알바가 혐짤을 지워줬습니다."; } },
-        { id: 'gacha', name: '📦 파딱 가챠', cost: 40, 
+        { id: 'gacha', name: '📦 파딱 가챠', cost: 40, class: 'btn-grow',
           eff: (s, g)=>{ return g.gacha(); } },
-        { id: 'alliance', name: '🤝 타갤 동맹', cost: 50, req: 3,
+        { id: 'alliance', name: '🤝 타갤 동맹', cost: 50, req: 3, class: 'btn-grow',
           eff: (s, g)=>{ g.flags.alliance=true; s.act+=10; return "대형 갤러리와 동맹을 맺었습니다."; } },
-        { id: 'clean_campaign', name: '✨ 클린 캠페인', cost: 30, req: 2,
-          eff: (s)=>{ s.karma = Math.max(0, s.karma-20); s.tox-=10; return "기부 인증을 통해 이미지를 세탁합니다."; } },
-        { id: 'sell_site', name: '🏢 갤러리 매각', cost: 500, req: 5,
+        { id: 'clean_campaign', name: '✨ 클린 캠페인', cost: 30, req: 2, class: 'btn-grow',
+          eff: (s)=>{ s.karma = Math.max(0, s.karma-20); s.tox-=10; return "기부 인증을 통해 이미지를 세탁합니다. (업보 감소)"; } },
+        { id: 'sell_site', name: '🏢 갤러리 매각', cost: 500, req: 5, class: 'btn-grow',
           eff: (s, g)=>{ g.triggerEnding(13); return ""; } }
     ]
 };
@@ -353,10 +352,14 @@ class Game {
         if(theme === 'pol') { this.state.act=70; this.state.tox=60; this.state.karma=10; }
         if(theme === 'hobby') { this.state.act=20; this.state.men=120; }
 
+        // FIX: Remove active from start, ADD active to game screen
         document.getElementById('start-screen').classList.remove('active');
+        document.getElementById('game-screen').classList.add('active');
+        
         document.getElementById('ui-title').innerText = 
             (theme==='idol'?'연예':(theme==='game'?'게임':(theme==='pol'?'정치':'식물'))) + " 갤러리";
         
+        ui.log(`갤러리가 개설되었습니다. 테마: [${theme}]`);
         ui.update();
         ui.renderActions();
     }
@@ -416,7 +419,9 @@ class Game {
 
         this.pasdaks.push(p);
         ui.renderPasdaks();
-        return `${p.name} (${p.type}급) 영입!`;
+        
+        const typeClass = p.type==='S'?'l-rare':(p.type==='F'?'l-bad':'l-sys');
+        return `파딱 영입: ${p.name} (${p.type}급)`;
     }
 
     checkEvents() {
@@ -448,7 +453,7 @@ class Game {
         else if(s.day >= 100) this.triggerEnding(10); // Survival
 
         // 3. Victory/Special
-        else if(this.level >= 5) this.triggerEnding(11); // Hired
+        else if(this.level >= 5 && !this.isOver && Math.random() < 0.05) this.triggerEnding(11); // Hired chance
         else if(s.fri > 90 && s.men > 90) this.triggerEnding(12); // Cult
     }
 
@@ -543,7 +548,7 @@ const ui = {
             // Text logic
             let html = `<span>${act.name}</span><span class="act-cost">${act.cost>0 ? act.cost+' CP' : 'Free'}</span>`;
             if(act.req && game.level < act.req) {
-                 html = `<span style="font-size:1.2rem">🔒</span><span class="act-cost">LV.${act.req} 필요</span>`;
+                 html = `<span style="font-size:1.2rem; margin-bottom:5px;">🔒</span><span class="act-cost">LV.${act.req}</span>`;
             }
             btn.innerHTML = html;
 
@@ -551,7 +556,13 @@ const ui = {
                 if(game.state.cp < act.cost) return;
                 game.state.cp -= act.cost;
                 const msg = act.eff(game.state, game);
-                ui.log(msg, ui.tabId==='dark' ? 'l-warn' : 'l-sys');
+                
+                // Log type based on tab
+                let logType = 'l-sys';
+                if(ui.tabId==='dark') logType = 'l-warn';
+                if(ui.tabId==='shop') logType = 'l-good';
+                
+                ui.log(msg, logType);
                 ui.floatText(e, `-${act.cost} CP`);
                 game.tick();
             };
@@ -562,9 +573,9 @@ const ui = {
 
     renderPasdaks: () => {
         const p = document.getElementById('pasdak-panel');
-        if(game.pasdaks.length === 0) { p.innerHTML = "파딱이 없습니다."; return; }
+        if(game.pasdaks.length === 0) { p.innerHTML = "파딱(부매니저)이 없습니다."; return; }
         p.innerHTML = game.pasdaks.map(x => 
-            `<span style="color:${x.type==='S'?'#f1c40f':(x.type==='F'?'#e74c3c':'#aaa')}; border:1px solid #444; padding:2px 5px; margin-right:4px; border-radius:4px;">[${x.type}] ${x.name}</span>`
+            `<span style="color:${x.type==='S'?'#f1c40f':(x.type==='F'?'#e74c3c':'#aaa')}; border:1px solid #444; padding:2px 5px; margin-right:4px; border-radius:4px; display:inline-block; margin-bottom:2px;">[${x.type}] ${x.name}</span>`
         ).join('');
     },
 
